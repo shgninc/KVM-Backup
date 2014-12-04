@@ -14,3 +14,9 @@ function vmNo(){
 vm=`listVM | wc -w`
 return $vm
 }
+
+# the $1 is the vm name in virsh
+function vmDisk(){
+vmPath=`virsh domblklist $1 | grep vda | awk '{print $2}'`
+echo $vmPath
+}
