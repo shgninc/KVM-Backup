@@ -1,0 +1,16 @@
+function destroy_vm(){
+echo "Destroy VM $NAME"
+rm -rf /home/ssd/$NAME.img
+virsh destroy $NAME
+virsh undefine $NAME
+}
+
+function listVM(){
+vm=`virsh list --all | awk '{print $2}' | grep -v Name` # | awk '{print $2}' <-- remove blank lines
+echo $vm
+}
+
+function vmNo(){
+vm=`listVM | wc -w`
+return $vm
+}
