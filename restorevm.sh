@@ -1,12 +1,20 @@
 #!/bin/bash
-
-#create new vm from an existing vm
-#sudo v	irsh create open.xml
-
-#destroy an existing vm
-#sudo virsh destroy deb77-openqrm
-
 . funcs
+TMP=/tmp
+backupDir=/bakdir
 
-vmNo
-echo $?
+vmName=`listVM | cut -f1 -d ' '`
+disk=`vmDisk $vmName`
+echo $disk
+
+if [ -e $disk ] 
+then
+   if [ ! -d $TMP$backupDir ]
+   then
+      mkdir -p $TMP$backupDir
+      ls -l $TMP$backupDir
+   fi
+   
+else
+   echo "There is no disk for this VM!"
+fi

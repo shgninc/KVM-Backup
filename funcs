@@ -1,3 +1,5 @@
+#create new vm from an existing vm
+#sudo v irsh create open.xml
 # Destroy a vm in disk file .img type 
 function destroy_vm(){
 echo "Destroy VM $NAME"
@@ -22,4 +24,10 @@ return $vm
 function vmDisk(){
 vmPath=`virsh domblklist $1 | grep vda | awk '{print $2}'`
 echo $vmPath
+}
+
+# Return VM's disk size, the $1 is the LVM disk name
+function vmDiskSize(){
+vmSize=`lvs | grep $1 | awk '{print $4}' | awk '{print substr($0,0,index($0,".")-1)}'`
+retusn $vmSize
 }
