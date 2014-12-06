@@ -28,6 +28,6 @@ echo $vmPath
 
 # Return VM's disk size, the $1 is the LVM disk name
 function vmDiskSize(){
-vmSize=`lvs | grep $1 | awk '{print $4}' | awk '{print substr($0,0,index($0,".")-1)}'`
+vmSize=`lvdisplay $1 | grep Size | awk '{print $3}' | awk '{print substr($0,0,index($0,".")-1)}'`
 retusn $vmSize
 }
