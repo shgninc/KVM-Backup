@@ -17,8 +17,10 @@ then
    then
       mkdir -p $TMP$backupDir
    fi
-   createSnapshot $snapName $size $diskPath
-   #echo $snapName $size $diskPath
+   #createSnapshot $snapName $size $diskPath
+   #mkdir -p $TMP$backupDir"/"$vmName 
+   echo $TMP$backupDir"/"$vmName
+   dd if=
 else
    echo "There is no disk for this VM!"
 fi
