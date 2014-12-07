@@ -1,20 +1,24 @@
 #!/bin/bash
-. funcs
+. funcs.sh
 TMP=/tmp
 backupDir=/bakdir
+DEV=/dev
+preDisk="snap-"
 
 vmName=`listVM | cut -f1 -d ' '`
-disk=`vmDisk $vmName`
-echo $disk
+diskPath=`vmDisk $vmName`
+#echo $diskPath
+size=`vmDiskSize $diskPath`
+snapName=$preDisk$vmName
 
-if [ -e $disk ] 
+if [ -e $disk ] # check if the VM's disk exist
 then
-   if [ ! -d $TMP$backupDir ]
+   if [ ! -d $TMP$backupDir ] # check if the tmp dir on /tmp exist
    then
       mkdir -p $TMP$backupDir
-      ls -l $TMP$backupDir
    fi
-   
+   createSnapshot $snapName $size $diskPath
+   #echo $snapName $size $diskPath
 else
    echo "There is no disk for this VM!"
 fi

@@ -11,6 +11,13 @@ function destroy_vm()
 	virsh undefine $NAME
 }
 
+# Get LVM group disk
+function getVg()
+{
+	vgName=`vgdisplay | grep "VG Name" | awk '{print $3}'`
+	echo $vgName
+}
+
 # Show list of VMs
 function listVM()
 {
@@ -39,15 +46,25 @@ function vmDiskSize()
 	echo $vmSize
 }
 
-# Create snapshut for VM's disk, the $1 is the name of snapshot LVM disk,
+# Create snapshot for VM's disk, the $1 is the name of snapshot LVM disk,
 # $2 is the size of the LVM disk, the $3 is path of the LVM disk
 function createSnapshot()
 {
+	isExist=`lvs | grep $1 | wc -l`
+	if [ $isExist == 1 ]
+	then
+	   echo "cleaning the exist LVM snapshot..."
+	   vgName=`getVg`
+	   sleep 4s
+	   removeDisk $DEV"/"$vgName"/"$1
+	fi
+	echo "creating the snapshot for LVM disk..."
+	sleep 4s
 	lvcreate --snapshot --name $1 --size $2G $3
 }
 
 # Remove the LVM disk, The $1 is the path of the LVM disk
 function removeDisk()
 {
-	lvremove -f $1
+	lvremove -vf $1
 }
