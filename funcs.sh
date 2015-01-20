@@ -21,8 +21,27 @@ function getVg()
 # Show list of VMs
 function listVM()
 {
-	vm=`virsh list --all | awk '{print $2}' | grep -v Name` # | awk '{print $2}' <-- remove blank lines
+	vm=`virsh list --all  | awk '{print $2}' | grep -v Name` # | awk '{print $2}'` <-- remove blank lines
 	echo $vm
+}
+
+# Choose the right VM, The $1 is the name of the VM was selected
+function selectVM()
+{
+	vms=`listVM`
+	for vm in $vms
+	do
+	   if [ $1 = $vm ]
+	   then
+		select=$vm
+	   fi
+	done
+	if [ $select ]
+	then
+	   echo $select
+	else
+	   echo 0
+	fi
 }
 
 # Return number of VMs
@@ -55,6 +74,7 @@ function createSnapshot()
 	then
 	   echo "cleaning the exist LVM snapshot..."
 	   vgName=`getVg`
+	   echo $vgName
 	   sleep 4s
 	   removeDisk $DEV"/"$vgName"/"$1
 	fi
@@ -67,4 +87,42 @@ function createSnapshot()
 function removeDisk()
 {
 	lvremove -vf $1
+}
+
+# Create dump xml file for VMs specefications
+function createDump()
+{
+	virsh dumpxml $1 > $2
+}
+
+# Backup VMs disk and convert it to a compressed file
+function backupDisk()
+{
+	dd if=$1 | gzip -c | dd of=$2
+}
+
+# Check VG LVM Disk size
+function getVgFree()
+{
+	vgFree=`vgs | awk '{print $7}' | grep -v VFree`
+	echo $vgFree
+}
+
+# Create LVM disk for Backup target folder
+function creatLvmBackup()
+{
+	isExist=`lvs | grep -c lv_vmBackup`
+	vgName=`getV`
+        if [ $isExist -ne 1 ]
+        then
+           echo "Creating the LVM Backup Disk..."
+           sleep 4s
+	   `lvcreate -n lv_vmBackup -L 100G $vgName`
+	   mkfs.ext4 -q /dev/vg_qrmkvm/lv_vmBackup
+        elif [ `mount | grep -c lv_vmBackup` -ne 1 ]
+	then
+	   echo "Mounting the LVM backup disk to /backup"
+	   mount $DEV"/"$vgName"/"lv_vmBackup /ashena/backup/
+	   rm -rf /ashena/backup/*
+	fi
 }

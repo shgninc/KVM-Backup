@@ -1,26 +1,37 @@
 #!/bin/bash
+set -e
+set -x
 . funcs.sh
-TMP=/tmp
-backupDir=/bakdir
+TMP=/ashena
+backupDir=/backup
 DEV=/dev
 preDisk="snap-"
 
-vmName=`listVM | cut -f1 -d ' '`
+vmName=`selectVM $1`
+#echo $vmName
 diskPath=`vmDisk $vmName`
 #echo $diskPath
 size=`vmDiskSize $diskPath`
+#echo $size
 snapName=$preDisk$vmName
+#echo $snapName
 
-if [ -e $disk ] # check if the VM's disk exist
+if [ -e $diskPath ] # check if the VM's disk exist
 then
    if [ ! -d $TMP$backupDir ] # check if the tmp dir on /tmp exist
    then
       mkdir -p $TMP$backupDir
    fi
    #createSnapshot $snapName $size $diskPath
-   #mkdir -p $TMP$backupDir"/"$vmName 
-   echo $TMP$backupDir"/"$vmName
-   dd if=
+   tmpPath=$TMP$backupDir"/"$vmName
+   if [ ! -d $tmpPath ]
+   then
+	mkdir -p $tmpPath
+   else
+	`rm -rf $tmpPath/*`
+   fi
+   createDump $vmName $tmpPath"/"$vmName".xml"
+   backupDisk $diskPath $tmpPath"/"$vmName".gz"
 else
    echo "There is no disk for this VM!"
 fi
