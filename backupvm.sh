@@ -2,11 +2,10 @@
 set -e
 set -x
 . funcs.sh
-TMP=/ashena
-backupDir=/backup
-DEV=/dev
-preDisk="snap-"
-
+if [ $# -eq 0 ]; then
+    echo "No arguments provided"
+    exit 1
+fi
 vmName=`selectVM $1`
 #echo $vmName
 diskPath=`vmDisk $vmName`

@@ -1,14 +1,16 @@
 #!/bin/bash
-
+# serverfault.com/questions/401704/how-do-i-make-a-persistent-domain-with-virsh
+. config
 #create new vm from an existing vm
 #sudo v irsh create open.xml
 # Destroy a vm in disk file .img type 
 function destroy_vm()
 {
-	echo "Destroy VM $NAME"
-	rm -rf /home/ssd/$NAME.img
-	virsh destroy $NAME
-	virsh undefine $NAME
+	path=`vmDisk $1`
+	echo "Destroying VM $1..."
+	#virsh undefine $1
+	sleep 5
+	#removeDisk $path
 }
 
 # Get LVM group disk
@@ -21,7 +23,16 @@ function getVg()
 # Show list of VMs
 function listVM()
 {
-	vm=`virsh list --all  | awk '{print $2}' | grep -v Name` # | awk '{print $2}'` <-- remove blank lines
+	echo "listing running VMs..."
+	vm=`virsh list | awk '{print $2}' | grep -v Name`
+	echo $vm
+}
+
+# Show list of All VMs
+function listAllVM()
+{
+	echo "listing VMs..."
+	vm=`virsh list --all  | awk '{print $2}' | grep -v Name`
 	echo $vm
 }
 
@@ -31,16 +42,15 @@ function selectVM()
 	vms=`listVM`
 	for vm in $vms
 	do
-	   if [ $1 = $vm ]
-	   then
+	   if [ $1 = $vm ]; then
 		select=$vm
 	   fi
 	done
-	if [ $select ]
-	then
+	if [ $select ];	then
 	   echo $select
 	else
 	   echo 0
+	   exit 1
 	fi
 }
 
@@ -111,18 +121,56 @@ function getVgFree()
 # Create LVM disk for Backup target folder
 function creatLvmBackup()
 {
-	isExist=`lvs | grep -c lv_vmBackup`
-	vgName=`getV`
-        if [ $isExist -ne 1 ]
-        then
+	if [ isBDiskExist -ne 1 ]; then
            echo "Creating the LVM Backup Disk..."
            sleep 4s
 	   `lvcreate -n lv_vmBackup -L 100G $vgName`
 	   mkfs.ext4 -q /dev/vg_qrmkvm/lv_vmBackup
-        elif [ `mount | grep -c lv_vmBackup` -ne 1 ]
-	then
-	   echo "Mounting the LVM backup disk to /backup"
-	   mount $DEV"/"$vgName"/"lv_vmBackup /ashena/backup/
-	   rm -rf /ashena/backup/*
-	fi
+  	fi
+}
+
+# Check The existing of the Backup TMP disk
+function isBDiskExist()
+{
+	echo `lvs | grep -c lv_vmBackup`
+}
+
+# Check The Backup TMP disk is mounted
+function isBDMount()
+{
+	local MOUNTS=/proc/mounts
+	cat "${MOUNTS}" | grep -c lv_vmBackup
+}
+
+# Mount The Backup TMP disk to /ashena/backup
+function bDMount()
+{
+	vgName=`getVg`
+	echo "Mounting the LVM backup disk to /backup..."
+	sleep 3s
+	mount $DEV"/"$vgName"/"lv_vmBackup /ashena/backup/
+	rm -rf /ashena/backup/*
+}
+
+# Control and Manage the Guest State
+function Guest {
+	case "$1" in
+		"start") virsh start "$2";;
+		"stop")
+			if [ -n "$winHost" ] ; then
+				echo "Attempting to shutdown windows host $winHost"
+				net rpc shutdown -I "$winHost" -U "$winUser" -C "This system will go down for a short time to perform backups."
+			else
+				virsh shutdown "$2"
+			fi
+			;;
+		"restore")
+			if [ "$wasRunning" -eq "0" ] ; then
+				virsh start "$2"
+				wasRunning="1"
+			fi
+			;;
+		"destroy") virsh destroy $2;;
+
+	esac
 }
